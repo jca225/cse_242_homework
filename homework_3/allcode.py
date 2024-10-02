@@ -56,6 +56,7 @@ class MerkleTree:
             level+=1
             productions = new_productions
         self.tree = productions[0]
+        return productions[0]
 
     def merkleToXML(self, production, originalSpacing='', level=1):
         """This method takes as input dictionary, and outputs the tree in XML"""
@@ -80,4 +81,15 @@ class MerkleTree:
         return string 
 
 
+# Prompting user for input
+filename = input("Please enter the path to the file: ")
 
+# Below is for testing purposes
+# filename = '/Users/johncabrahams/Desktop/Projects/CSE-242-Resources/homework_3/transactions.txt'
+
+
+merkle = MerkleTree()
+
+merkle.fill(filename)
+
+print(merkle.merkleToXML(merkle.tree))
