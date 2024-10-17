@@ -27,6 +27,8 @@ class MerkleTree:
         level = 0
         # Holds the hashed values in our file
         productions = [leafNode(leaf) for leaf in leaves]
+        # Sort productions based on account address
+        productions.sort(lambda leaf: leaf['address'])
         while len(productions) != 1:
             new_productions = []
 
@@ -80,5 +82,6 @@ class MerkleTree:
             string += originalSpacing + "</Node" + str(level) + ">" + '\n'
         return string 
 
-
+    def printMerkleTree(self):
+        pass
 
