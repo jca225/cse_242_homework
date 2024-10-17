@@ -25,7 +25,7 @@ class BlockChain():
             previousBlockHeader = sha256(str(0).encode('utf-8')).hexdigest()
         
         # This is where the user tries adding a block with a nonce that is less than or equal to the difficulty target
-        if int(sha256((merkleRootHash + nonce).encode('utf-8')).hexdigest(),16) > self._difficultyTarget:
+        if int(sha256((merkleRootHash + nonce).encode('utf-8')).hexdigest(),16) <= self._difficultyTarget:
             return False
         # Instantiate header with python dictionary (meant to emulate a struct in C)
         headerInfo = self._header(previousBlockHeader, merkleRootHash, timestamp, self._difficultyTarget, nonce)

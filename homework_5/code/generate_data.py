@@ -1,7 +1,7 @@
 import random
 import sys
 
-"""File for generating random data of the appropriate form"""
+"""File for generating random transaction data"""
 def generate_random_hex_string():
     # Define the hexadecimal alphabet for our account address
     hex_alphabet = '0123456789abcdef'
@@ -26,6 +26,6 @@ if __name__ == "__main__":
         # Generate random number of lines between
         with open(file_path, 'w') as file:
             # Loop through the number of transactions and write each the corresponding string to the file
-            for _ in numTransactions:
+            for _ in range(numTransactions):
                 file.write(generate_random_hex_string() + '\n') 
             

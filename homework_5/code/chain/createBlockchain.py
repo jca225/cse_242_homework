@@ -1,16 +1,16 @@
-from chain.MerkleTree import MerkleTree
-from chain.blockchain import BlockChain
+from MerkleTree import MerkleTree
+from blockchain import BlockChain
 from hashlib import sha256
 import random
 import sys
 
 
-
 class CreateBlockChain:
     """Abstraction for blockchain creation. This class creates an entire Blockchain and outputs it to disk. 
        This is meant to emulate downloading a blockchain to look at it"""
-    def __init__(filenames):
-    
+    def __init__(self, filenames, destinationDir):
+        """Read transactions in and put them onto disk as blockchain"""
+        self.destinationDir = destinationDir
         # Create new blockchain. 
         blockchain = BlockChain()
         # Loop through files and add block to blockchain for each file
@@ -20,7 +20,7 @@ class CreateBlockChain:
             # Open file
             with open(filename) as file:
                 for line in file:
-                    transactions.append(line[:-1])
+                    transactions.append(line[:-2])
             # Create merkle root hash
             merkleRootHash = MerkleTree().fill(transactions)['hash']
             # Try adding the block to the blockchain
@@ -29,7 +29,7 @@ class CreateBlockChain:
                 nonce = str(int(nonce) + 1)
 
         # Format filename to output block to
-        newFilename = filenames[0].split(".txt")[0]
+        newFilename = self.destinationDir + "blockchain"
         newFilename += ".block.out"
         # Print blockchain
         blockchain.printBlockChain(newFilename)    
@@ -38,8 +38,10 @@ class CreateBlockChain:
 
 class CreateIncorrectBlockChain:
     """Abstraction for "blockchain poison." We create a normal blockchain then edit some of the fields."""
+    def __init__(self, destinationDir):
+        self.destinationDir = destinationDir
     def poisonMerkleHash(self, filenames):
-
+        """Read transactions in and poison them"""
         # Create new blockchain. 
         blockchain = BlockChain()
         # Loop through files and add block to blockchain for each file
@@ -49,7 +51,7 @@ class CreateIncorrectBlockChain:
             # Open file
             with open(filename) as file:
                 for line in file:
-                    transactions.append(line[:-1])
+                    transactions.append(line[:-2])
             # Create merkle root hash
             merkleRootHash = MerkleTree().fill(transactions)['hash']
             # Poison merkle root hash by hashing it again
@@ -60,13 +62,13 @@ class CreateIncorrectBlockChain:
                 nonce = str(int(nonce) + 1)
 
         # Format filename to output block to
-        newFilename = filenames[0].split(".txt")[0]
+        newFilename = self.destinationDir + "blockchain"
         newFilename += "poisonedMerkle.block.out"
         # Print poisoned blockchain
         blockchain.printBlockChain(newFilename)    
     
     def poisonTransactions(self, filenames):
-
+        """Read transactions in and poison them"""
         # Create new blockchain. 
         blockchain = BlockChain()
         # Loop through files and add block to blockchain for each file
@@ -75,9 +77,8 @@ class CreateIncorrectBlockChain:
             transactions = []
             # Open file
             with open(filename) as file:
-                # Poison transactions line-by-line 
                 for line in file:
-                    transactions.append(line[:-1])
+                    transactions.append(line[:-2])
             # Create merkle root hash
             merkleRootHash = MerkleTree().fill(transactions)['hash']
             for i in range(len(transactions)):
@@ -97,21 +98,22 @@ class CreateIncorrectBlockChain:
                 nonce = str(int(nonce) + 1)
 
         # Format filename to output block to
-        newFilename = filenames[0].split(".txt")[0]
+        newFilename = self.destinationDir + "blockchain"
         newFilename += "poisonedTransaction.block.out"
         # Print poisoned blockchain
         blockchain.printBlockChain(newFilename)    
 
 
 # If the file is run directly create a blockchain of a certain type for testing purposes
-if __name__ == "main":
+if __name__ == "__main__":
     # Get inputs from command line arguments
     poisonedChain = int(sys.argv[1])  # First argument: poisonedChain
-    filenames = sys.argv[2:]          # All other arguments: filenames
+    filenames = sys.argv[2:-1]  # All other arguments except for the last: filenames
+    directory = sys.argv[-1]  # Last argument: location to store the files
 
     # If the user chose to create a poisoned chain
     if poisonedChain:
-        incorrectBlockChainCreator = CreateIncorrectBlockChain()
+        incorrectBlockChainCreator = CreateIncorrectBlockChain(directory)
         # We create a blockchain with a poisoned merkle hash and push it to disk
         incorrectBlockChainCreator.poisonMerkleHash(filenames)
         # We create a blockchain with a poisoned transaction list and push it to disk
@@ -119,4 +121,4 @@ if __name__ == "main":
         
     else:
         # Create a healthy chain and push it to disk
-        blockChainCreator = CreateBlockChain(filenames)
+        blockChainCreator = CreateBlockChain(filenames, directory)

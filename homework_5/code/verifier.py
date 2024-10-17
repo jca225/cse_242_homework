@@ -102,15 +102,17 @@ class Verifier:
 
 
 if __name__ == "main":
-    filename = sys.argv[1]
+    filenames = sys.argv[1:]
     # Instantiate verifier
     verifier = Verifier()
-
-    # Create local blockchain stored on verifier class
-    verifier.parse_file(filename)
-    # validate blockchain
-
-    # check for certain address
+    for filename in filenames:
+        print("validating file " + filename + ".")
+        # Create local blockchain stored on verifier class
+        verifier.parse_file(filename)
+        # validate blockchain
+        print("Validating the chain...")
+        # check for certain address
+        print("Assert and address exists on chain")
 
 """
 Players:

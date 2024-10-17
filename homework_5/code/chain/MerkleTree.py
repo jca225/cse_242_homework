@@ -14,7 +14,7 @@ def internalNode(left, right, hash=None):
     return {'type': 'internal', 'left': left, 'right': right, 'hash': sha256(hash.encode('utf-8')).hexdigest() }
 
 class MerkleTree:
-    """Lightweight class meant to scope the creation and search of a merkle tree. Also supports printing nodes."""
+    """Lightweight class meant to scope the creation and search of a merkle tree. Also supports printing and searching."""
     def __init__(self):
         self.tree = None
 
@@ -25,7 +25,7 @@ class MerkleTree:
         # Holds the hashed values in our file
         productions = [leafNode(leaf) for leaf in leaves]
         # Sort productions based on account address
-        productions.sort(lambda leaf: leaf['address'])
+        productions.sort(key=lambda leaf: leaf['address'])
         while len(productions) != 1:
             new_productions = []
 
@@ -82,15 +82,26 @@ class MerkleTree:
 
     
     def auxSearchTree(self, node, hashedAccount, pathList):
+        """This is an auxiliary method that allows us to search the leaves of the tree and find the 
+           corresponding path"""
+        # Base case: We are at a leaf
         if node['type'] == "leaf":
+            # If we have found the hashed account append it to the list of accounts and exit
             if node['hash'] == hashedAccount:
                 pathList.append(node['hash'])
                 return
+        # Recursive step: We are at a node with a child
         else:
+            # Search the left tree
             self.auxSearchTree(node['left'], hashedAccount, pathList)
+            # NOTE: "The account exists in the substree denoted by node['left']"" == "len(pathList) > 0"
             if len(pathList) != 0:
+                # Add the current node's hash to the list of paths
                 pathList.append(node['right']['hash'], node['hash'])
+            # Otherwise, we search the right tree. In this way our algorithm is left-biased
             else:
                 self.auxSearchTree(node['right'], hashedAccount, pathList)
-                pathList.append(node['left']['hash'], node['hash'])
+                if len(pathList) != 0:
+                    pathList.append(node['left']['hash'], node['hash'])
+                
 
