@@ -2,14 +2,25 @@ from chain.MerkleTree import MerkleTree
 from chain.blockchain import BlockChain
 import sys
 
+def green(txt):
+    """Function to wrap text in green for output, courtesy of Professor Spear's 303 Test Cases :)"""
+    """wrap /txt/ in ASCII codes for making it green"""
+    green = "\033[32m"
+    reset = "\033[0m"
+    return green + txt + reset
+
+def red(txt):
+    """wrap /txt/ in ASCII codes for making it red, courtesy of Professor Spear's 303 Test Cases :)"""
+    red = "\033[31m"
+    reset = "\033[0m"
+    return red + txt + reset
+
 class Verifier:
     """Class verifies our blockchain. Takes as input the serialized blockchain stored on disk"""
 
     def parse_file(self, filepath):
         """Takes as input the file containing the serialized blockchain and returns a local copy of it. Most of this is 
            just reading in a file of a specific type and instantiating a local copy of the blockchain"""
-        # Stores parsed blocks
-        parsed_blocks = []
         # Open the file where the serialized blockchain is stored
         with open(filepath, 'r') as f:
             # stores each serialized block
@@ -19,16 +30,18 @@ class Verifier:
             # Loop through each line in the file
             for line in f:
                 # Detect the start and end of a block
-                if line == "BEGIN BLOCK":
+                if line[:-1] == "BEGIN BLOCK":
                     # Append a new array indicating a new block
                     serializedBlocks.append([])
-                    continue
                 # Don't add anything to the block if we are at the end
-                elif line == "END BLOCK":
+                elif line[:-1] == "END BLOCK":
+                    continue
+                # Ignore newlines
+                elif line == '\n':
                     continue
                 # Add file info to the block
                 else:
-                    serializedBlocks[-1].append(line)
+                    serializedBlocks[-1].append(line[:-1])
             
             # Now we loop through each serialzed block and
             # store them locally
@@ -38,41 +51,45 @@ class Verifier:
                 # Define line index
                 lineIndex = 0
                 # Loop through all values. the `while` loop lets us 
-                # increment lineIndex within the loop easily, which is 
+                # increment lineIndex **within** the loop easily, which is 
                 # necessary for parsing the header.
-                while lineIndex < range(len(block)):
+                while lineIndex < len(block):
                     # We have an exact format for our header
-                    if line[lineIndex] == "BEGIN HEADER":
+                    if block[lineIndex] == "BEGIN HEADER":
                         # Define all of our values
-                        previousBlockHash = line[lineIndex+1]
-                        merkleHash = line[lineIndex+2]
-                        timestamp = int(line[lineIndex+3])
-                        difficultyTarget = int(line[lineIndex+4])
-                        nonce = int(line[lineIndex+5])
+                        previousBlockHash = block[lineIndex+1]
+                        merkleHash = block[lineIndex+2]
+                        timestamp = float(block[lineIndex+3])
+                        difficultyTarget = float(block[lineIndex+4])
+                        nonce = float(block[lineIndex+5])
                         # Assert the next line is the end of the header
-                        assert(line[lineIndex+6] == "END HEADER")
+                        assert(block[lineIndex+6] == "END HEADER")
+                        lineIndex += 7
                     # Append the line to the list of accounts
                     else:
-                        accounts.append(line[lineIndex])
+                        accounts.append(block[lineIndex])
+                        lineIndex += 1
                 # Create merkle tree based on our account information
                 merkleTreeInstance = MerkleTree()
-                merkleTreeInstance.fill(accounts)
+                localTreeHash = MerkleTree().fill(accounts)['hash']
                 # Construct local block
-                localBlock = self._constructLocalBlock(previousBlockHash, merkleHash, timestamp, difficultyTarget, nonce, accounts, merkleTreeInstance)
+                localBlock = self._constructLocalBlock(previousBlockHash, merkleHash, timestamp, difficultyTarget, nonce, accounts, localTreeHash)
                 # Append it to the local chain
                 self.localChain.append(localBlock)
 
-    def _constructlocalBlock(self,previousBlockHash, merkleHash, timestamp, difficultyTarget, nonce, accounts, merkleTree):
+    def _constructLocalBlock(self,previousBlockHash, merkleHash, timestamp, difficultyTarget, nonce, accounts, merkleTree):
         """Constructs a local representation of a block"""
-        return {"previousBlockHash":previousBlockHash, "merkleHash":merkleHash,"timestamp":timestamp,"difficultyTarget":difficultyTarget,"nonce":nonce,"accounts":accounts,"merkleTree":merkleTree}
+        return {"previousBlockHash":previousBlockHash, "merkleHash":merkleHash,"timestamp":timestamp,"difficultyTarget":difficultyTarget,"nonce":nonce,"accounts":accounts,"localTreeHash":merkleTree}
 
     # NOTE: The following methods are part of the assignment. All of the code above is just scaffolding
     def verifyBlock(self, block):
         """Takes a block as input and returns a boolean indicating if it is valid. 
            We calculate a merkle root for ourselves and ensure they match"""
-        return block["merkleTreeInstance"].tree['hash'] == block["merkleHash"]
+        return block["localTreeHash"] == block["merkleHash"]
     
-    def verifyChain(self, blockchain):
+    def verifyChain(self, blockchain=None):
+        if not blockchain:
+            blockchain = self.localChain
         """Check correctness of hashes of previous blocks"""
         for block in blockchain:
             if not self.verifyBlock(block):
@@ -98,19 +115,21 @@ class Verifier:
     def proofOfMembership(self, account, merkleTreeInstance):
         """Conduct proof of membership. Check to see if an account is on chain, and get the path to the account. """
         return merkleTreeInstance.searchTree(account)
-    
 
-
-if __name__ == "main":
+if __name__ == "__main__":
+    # For testing purposes:
+    # filenames = ['/Users/johncabrahams/Desktop/Projects/CSE-242-Resources/homeworks/homework_5/blocks/blockchain.block.out']
     filenames = sys.argv[1:]
     # Instantiate verifier
-    verifier = Verifier()
     for filename in filenames:
+        verifier = Verifier()
         print("validating file " + filename + ".")
         # Create local blockchain stored on verifier class
         verifier.parse_file(filename)
         # validate blockchain
         print("Validating the chain...")
+        if verifier.verifyChain(): print("Chain is valid: \t\t\t [" + green("OK") + "]")
+        else: print("Chain is valid \t\t\t [" + red("ERROR") + "]")
         # check for certain address
         print("Assert and address exists on chain")
 
